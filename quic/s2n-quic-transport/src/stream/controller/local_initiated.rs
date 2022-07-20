@@ -228,7 +228,7 @@ impl<L: LocalLimits> LocalInitiated<L> {
     }
 
     #[inline]
-    fn check_integrity(&self) {
+    pub(super) fn check_integrity(&self) {
         if cfg!(debug_assertions) {
             assert!(
                 self.closed_streams <= self.opened_streams,
