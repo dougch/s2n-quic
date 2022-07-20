@@ -178,7 +178,7 @@ struct Model {
 impl Model {
     fn new(local_endpoint_type: endpoint::Type, limits: Limits) -> Self {
         let (initial_local_limits, initial_remote_limits, stream_limits) =
-            limits.as_contoller_limits();
+            limits.as_controller_limits();
 
         Model {
             oracle: Oracle {
@@ -273,7 +273,7 @@ impl Model {
 
         for stream_nth_idx in stream_nth_idx_iter {
             let stream_id = StreamId::nth(stream_initiator, stream_type, stream_nth_idx).unwrap();
-            let can_open = self.can_open(stream_type);
+            let can_open = self.can_open_local(stream_type);
 
             let res = self.subject.poll_open_local_stream(
                 stream_id,
@@ -312,7 +312,7 @@ impl Model {
         let stream_iter = StreamIter::new(start_stream, end_stream);
         let res = self.subject.on_open_remote_stream(stream_iter);
 
-        if self.oracle.can_open_remote(stream_type, nth_idx) {
+        if self.can_open_remote(stream_type, nth_idx) {
             for stream_nth_idx in stream_nth_idx_iter {
                 self.oracle
                     .on_open_stream(stream_initiator, stream_type, stream_nth_idx);
@@ -357,19 +357,16 @@ impl Model {
         self.subject.on_close_stream(stream_id);
     }
 
-    fn can_open(&self, stream_type: StreamType) -> bool {
-        let available_stream_capacity = match stream_type {
-            StreamType::Bidirectional => self
-                .subject
-                .local_bidi_controller
-                .available_stream_capacity(),
-            StreamType::Unidirectional => self
-                .subject
-                .local_uni_controller
-                .available_stream_capacity(),
-        };
+    fn can_open_local(&self, stream_type: StreamType) -> bool {
+        let available_stream_capacity = self
+            .subject
+            .available_local_initiated_stream_capacity(stream_type);
 
         available_stream_capacity > VarInt::from_u8(0)
+    }
+
+    fn can_open_remote(&self, stream_type: StreamType, nth_idx: u64) -> bool {
+        self.oracle.can_open_remote(stream_type, nth_idx)
     }
 
     /// Check that the subject and oracle match.
@@ -383,7 +380,9 @@ impl Model {
                 .open_streams_count(stream_initiator, stream_type)
         );
         assert_eq!(
-            self.subject.remote_bidi_controller.latest_limit().as_u64(),
+            self.subject
+                .remote_initiated_max_streams_latest_value(stream_type)
+                .as_u64(),
             self.oracle.remote_limit(stream_type)
         );
 
@@ -396,7 +395,9 @@ impl Model {
                 .open_streams_count(stream_initiator, stream_type)
         );
         assert_eq!(
-            self.subject.remote_uni_controller.latest_limit().as_u64(),
+            self.subject
+                .remote_initiated_max_streams_latest_value(stream_type)
+                .as_u64(),
             self.oracle.remote_limit(stream_type)
         );
 
@@ -473,7 +474,7 @@ struct Limits {
 }
 
 impl Limits {
-    fn as_contoller_limits(
+    fn as_controller_limits(
         &self,
     ) -> (
         InitialFlowControlLimits,

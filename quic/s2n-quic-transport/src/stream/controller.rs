@@ -124,6 +124,7 @@ impl Controller {
 
         match poll {
             Poll::Ready(_) => {
+                // only open streams if there is sufficient capacity based on limits
                 self.on_open_stream(stream_id);
                 Poll::Ready(stream_id)
             }
@@ -150,6 +151,8 @@ impl Controller {
                 _ => (),
             }
         }
+
+        // return early if there is not sufficient capacity based on limits
         match stream_iter.max_stream_id().stream_type() {
             StreamType::Bidirectional => self
                 .remote_bidi_controller
@@ -165,7 +168,11 @@ impl Controller {
         Ok(())
     }
 
-    /// This method is called whenever a stream is opened, regardless of which side initiated.
+    /// This method is called whenever a stream is opened, regardless of
+    /// which side initiated.
+    ///
+    /// The caller is responsible for performing stream capacity checks
+    /// prior to calling this function.
     fn on_open_stream(&mut self, stream_id: StreamId) {
         match self.direction(stream_id) {
             StreamDirection::LocalInitiatedBidirectional => {
