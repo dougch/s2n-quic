@@ -180,7 +180,7 @@ impl<L: LocalLimits> LocalInitiated<L> {
     }
 
     /// Returns the number of streams currently open
-    pub(super) fn open_stream_count(&self) -> VarInt {
+    pub fn open_stream_count(&self) -> VarInt {
         self.opened_streams - self.closed_streams
     }
 
@@ -228,7 +228,7 @@ impl<L: LocalLimits> LocalInitiated<L> {
     }
 
     #[inline]
-    pub(super) fn check_integrity(&self) {
+    pub fn check_integrity(&self) {
         if cfg!(debug_assertions) {
             assert!(
                 self.closed_streams <= self.opened_streams,

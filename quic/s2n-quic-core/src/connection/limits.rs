@@ -131,10 +131,6 @@ impl Limits {
     /// `with_max_open_local_bidirectional_streams` will be used instead
     /// if set on the builder.
     // TODO: Deprecate
-    // #[deprecated(
-    //     since = "1.7.0",
-    //     note = "use with_max_open_remote_bidirectional_streams and with_max_open_local_bidirectional_streams instead"
-    // )]
     pub fn with_max_open_bidirectional_streams(
         mut self,
         value: u64,

@@ -5,10 +5,11 @@ use super::StreamId;
 #[cfg(any(test, feature = "generator"))]
 use bolero_generator::*;
 
+/// An Iterator over Stream Ids of a particular type.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(any(feature = "generator", test), derive(TypeGenerator))]
 pub struct StreamIter {
-    pub start_stream_id: StreamId,
+    start_stream_id: StreamId,
     max_stream_id: StreamId,
     finished: bool,
 }
@@ -16,9 +17,9 @@ pub struct StreamIter {
 impl StreamIter {
     #[inline]
     pub fn new(start_stream_id: StreamId, max_stream_id: StreamId) -> Self {
-        assert_eq!(start_stream_id.stream_type(), max_stream_id.stream_type());
-        assert_eq!(start_stream_id.initiator(), max_stream_id.initiator());
-        assert!(start_stream_id <= max_stream_id);
+        debug_assert_eq!(start_stream_id.stream_type(), max_stream_id.stream_type());
+        debug_assert_eq!(start_stream_id.initiator(), max_stream_id.initiator());
+        debug_assert!(start_stream_id <= max_stream_id);
 
         Self {
             start_stream_id,
@@ -45,9 +46,8 @@ impl Iterator for StreamIter {
         match self.start_stream_id.cmp(&self.max_stream_id) {
             std::cmp::Ordering::Less => {
                 let ret = self.start_stream_id;
-                // The Stream ID can be expected to be valid, since we check upfront
-                // whether the highest stream id (`stream_id`) is still valid,
-                // and all IDs we iterate over are lower.
+                // The Stream ID can be expected to be valid, since `max_stream_id`
+                // is a valid `StreamId` and all IDs we iterate over are lower.
                 self.start_stream_id = self
                     .start_stream_id
                     .next_of_type()
@@ -55,7 +55,7 @@ impl Iterator for StreamIter {
                 Some(ret)
             }
             std::cmp::Ordering::Equal => {
-                // avoid incrementing beyond max_stream_id and mark finished
+                // Avoid incrementing beyond `max_stream_id` and mark finished to
                 // to avoid returning max value again
                 self.finished = true;
                 Some(self.start_stream_id)
