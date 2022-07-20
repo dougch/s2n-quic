@@ -134,10 +134,12 @@ impl Controller {
 
     /// This method is called when the remote peer wishes to open a new stream.
     ///
-    /// Streams are opened only if all lower Stream ID of the same type can also be
-    /// opened. A `STREAM_LIMIT_ERROR` will be returned if the peer has exceeded the
-    /// stream limits that were communicated by transport parameters or MAX_STREAMS
-    /// frames.
+    /// Opening a Stream also opens all lower Streams of the same type. Therefore
+    /// this function validates if there is enough capacity to open all streams.
+    ///
+    /// A `STREAM_LIMIT_ERROR` will be returned if the peer has exceeded the
+    /// stream limits that were communicated by transport parameters or
+    /// MAX_STREAMS frames.
     pub fn on_open_remote_stream(
         &mut self,
         stream_iter: StreamIter,

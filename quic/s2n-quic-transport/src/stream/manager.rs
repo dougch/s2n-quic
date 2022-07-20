@@ -201,11 +201,11 @@ impl<S: StreamTrait> StreamManagerState<S> {
         result
     }
 
-    /// Opens the `Stream` with the given `StreamId`.
+    /// Inserts the `Stream` into the StreamContainer.
+    ///
     /// This method does not perform any validation whether it is allowed to
-    /// open the `Stream`, since the necessary validation depends on which side
-    /// opens the `Stream`.
-    fn insert_opened_stream(&mut self, stream_id: StreamId) {
+    /// open the `Stream`.
+    fn insert_stream(&mut self, stream_id: StreamId) {
         // The receive window is announced by us towards to the peer
         let initial_receive_window = self
             .initial_local_limits
@@ -278,6 +278,7 @@ impl<S: StreamTrait> StreamManagerState<S> {
                 //# STREAM_LIMIT_ERROR; see Section 11 for details on error handling.
                 let stream_iter = StreamIter::new(first_unopened_id, stream_id);
 
+                // Validate that there is enough capacity to open all streams.
                 self.stream_controller.on_open_remote_stream(stream_iter)?;
 
                 // We must create ALL streams which a lower Stream ID too:
@@ -287,7 +288,7 @@ impl<S: StreamTrait> StreamManagerState<S> {
                 //# numbered stream IDs MUST be created.  This ensures that the creation
                 //# order for streams is consistent on both endpoints.
                 for stream_id in stream_iter {
-                    self.insert_opened_stream(stream_id);
+                    self.insert_stream(stream_id);
                 }
 
                 //= https://www.rfc-editor.org/rfc/rfc9000#section-2.1
@@ -323,7 +324,7 @@ impl<S: StreamTrait> StreamManagerState<S> {
         Ok(())
     }
 
-    fn open_local_stream(
+    fn poll_open_local_stream(
         &mut self,
         stream_id: StreamId,
         open_token: &mut connection::OpenToken,
@@ -340,7 +341,7 @@ impl<S: StreamTrait> StreamManagerState<S> {
             .poll_open_local_stream(stream_id, open_token, context)
         {
             Poll::Ready(stream_id) => {
-                self.insert_opened_stream(stream_id);
+                self.insert_stream(stream_id);
                 Poll::Ready(Ok(stream_id))
             }
             Poll::Pending => Poll::Pending,
@@ -547,7 +548,7 @@ impl<S: StreamTrait> AbstractStreamManager<S> {
         }
     }
 
-    /// Opens the next outgoing stream of a certain type
+    /// Opens the next local initiated stream of a certain type
     pub fn poll_open(
         &mut self,
         stream_type: StreamType,
@@ -569,7 +570,7 @@ impl<S: StreamTrait> AbstractStreamManager<S> {
 
         if self
             .inner
-            .open_local_stream(first_unopened_id, open_token, context)
+            .poll_open_local_stream(first_unopened_id, open_token, context)
             .is_pending()
         {
             return Poll::Pending;
