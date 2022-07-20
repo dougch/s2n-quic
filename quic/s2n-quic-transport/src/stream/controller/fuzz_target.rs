@@ -12,7 +12,6 @@ use s2n_quic_core::varint::VarInt;
 #[derive(Debug)]
 struct Oracle {
     local_endpoint_type: endpoint::Type,
-    stream_limits: stream::Limits,
     initial_local_limits: InitialFlowControlLimits,
     initial_remote_limits: InitialFlowControlLimits,
 
@@ -184,7 +183,6 @@ impl Model {
         Model {
             oracle: Oracle {
                 local_endpoint_type,
-                stream_limits,
                 initial_local_limits,
                 initial_remote_limits,
                 max_remote_bidi_opened_nth_idx: None,
