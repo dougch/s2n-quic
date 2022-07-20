@@ -277,10 +277,11 @@ impl<S: StreamTrait> StreamManagerState<S> {
                 //# sent MUST treat this as a connection error of type
                 //# STREAM_LIMIT_ERROR; see Section 11 for details on error handling.
                 let stream_iter = StreamIter::new(first_unopened_id, stream_id);
+
                 self.stream_controller.on_open_remote_stream(stream_iter)?;
 
                 // We must create ALL streams which a lower Stream ID too:
-
+                //
                 //= https://www.rfc-editor.org/rfc/rfc9000#section-3.2
                 //# Before a stream is created, all streams of the same type with lower-
                 //# numbered stream IDs MUST be created.  This ensures that the creation

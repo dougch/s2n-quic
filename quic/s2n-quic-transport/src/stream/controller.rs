@@ -90,7 +90,8 @@ impl Controller {
 
     /// This method is called when the local application wishes to open a new stream.
     ///
-    /// This API requires that only one stream is opened per invocation.
+    /// This API requires that only one stream is opened per invocation and must be
+    /// called the next stream id of a type.
     ///
     /// `Poll::Pending` is returned when there isn't available capacity to open a stream,
     /// either because of local initiated concurrency limits or the peer's stream limits.
@@ -132,8 +133,10 @@ impl Controller {
 
     /// This method is called when the remote peer wishes to open a new stream.
     ///
-    /// A `STREAM_LIMIT_ERROR` will be returned if the peer has exceeded the stream limits
-    /// that were communicated by transport parameters or MAX_STREAMS frames.
+    /// Streams are opened only if all lower Stream ID of the same type can also be
+    /// opened. A `STREAM_LIMIT_ERROR` will be returned if the peer has exceeded the
+    /// stream limits that were communicated by transport parameters or MAX_STREAMS
+    /// frames.
     pub fn on_open_remote_stream(
         &mut self,
         stream_iter: StreamIter,
